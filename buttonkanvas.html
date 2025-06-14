@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <link rel="manifest" href="manifest.json"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kisah Tak Terduga</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            color: #F0F0F0; /* Ubah warna teks menjadi putih agak off-white */
+            margin: 0;
+            font-size: 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            cursor: pointer;
+            /* --- Background GIF untuk seluruh halaman (body) --- */
+            background-image: url('https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/c2353506-4d20-4fe6-8a3f-47d8c90bda35/d3jmuqf-ccd560bb-a748-4fb8-9f41-190135c6b4c4.gif?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcL2MyMzUzNTA2LTRkMjAtNGZlNi04YTNmLTQ3ZDhjOTBiZGEzNVwvZDNqbXVxZi1jY2Q1NjBiYi1hNzQ4LTRmYjgtOWY0MS0xOTAxMzVjNmI0YzQuZ2lmIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.o89vmzEpAQ9j9MrvAwylHCOLLYCJC2XP3dZ2Xi-QHu0');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-attachment: fixed; /* Tetap di tempat saat konten di-scroll */
+        }
+        #story-container {
+            width: 90%;
+            max-width: 800px;
+            padding: 30px;
+            box-sizing: border-box;
+            text-align: left;
+            position: relative;
+            overflow-y: auto; /* Aktifkan scroll vertikal jika konten melebihi tinggi */
+            max-height: 90vh; /* Batasi tinggi container agar bisa di-scroll */
+            border: 1px solid rgba(255, 255, 255, 0.3); /* Border yang lebih lembut */
+            /* --- Overlay transparan dan blur di dalam #story-container --- */
+            background-color: rgba(0, 0, 0, 0.5); /* Hitam transparan sedikit lebih pekat */
+            backdrop-filter: blur(5px); /* Efek blur yang sedikit lebih kuat */
+            border-radius: 10px; /* Tambahkan sedikit border-radius */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7); /* Tambahkan shadow ke kontainer */
+        }
+        .chapter {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            min-height: 250px;
+        }
+        .chapter.active {
+            display: block;
+            opacity: 1;
+        }
+        h2 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ADD8E6; /* Warna biru muda untuk border */
+            padding-bottom: 10px;
+            font-weight: 900;
+            color: #FFFFFF; /* Pastikan judul juga putih */
+            text-shadow:
+                2px 2px 4px rgba(0, 0, 0, 0.8); /* Shadow yang lebih kuat untuk judul */
+        }
+        p {
+            font-size: 1.1em;
+            font-weight: 600; /* Sedikit mengurangi ketebalan font untuk teks paragraf */
+            line-height: 1.7; /* Tingkatkan line-height untuk keterbacaan */
+            white-space: pre-wrap;
+            color: #F0F0F0; /* Pastikan paragraf juga putih agak off-white */
+            text-shadow:
+                1px 1px 2px rgba(0, 0, 0, 0.6); /* Tambahkan shadow ringan untuk teks paragraf */
+        }
+        #typing-cursor {
+            font-weight: bold;
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            from, to { opacity: 0; }
+            50% { opacity: 1; }
+        }
+        #instructions0 {
+            position: sticky;
+            bottom: 0px;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.8); /* Background instruksi sedikit lebih gelap */
+            padding: 10px 0;
+            text-align: center;
+            font-size: 0.9em;
+            color: #E0E0E0; /* Warna teks instruksi sedikit lebih terang */
+            box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.3); /* Shadow instruksi yang lebih gelap */
+        }
+        #start-button {
+            background-color: #007BFF; /* Biru yang lebih solid */
+            color: #FFFFFF; /* Teks putih */
+            border: 2px solid #0056b3; /* Border biru gelap */
+            padding: 15px 30px;
+            font-size: 1.5em;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100; /* Pastikan di atas elemen lain */
+            box-shadow: 0 0 15px rgba(0, 123, 255, 0.5); /* Shadow biru untuk tombol */
+        }
+        #start-button:hover {
+            background-color: #0056b3; /* Biru lebih gelap saat hover */
+            color: #fff;
+            box-shadow: 0 0 25px rgba(0, 123, 255, 0.8);
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+        /* Responsive */
+        @media (max-width: 768px) {
+            #story-container {
+                padding: 20px;
+            }
+            h2 {
+                font-size: 1.5em;
+            }
+            p {
+                font-size: 1em;
+            }
+            #start-button {
+                font-size: 1.2em;
+                padding: 10px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+
+    
+    <button id="start-button">Subcribe Dulu Dong</button>
+    <div id="story-container">
+        <div id="instructions"></div>
+    </div>
+    <script>
+        // Data cerita dibagi per bab/layar
+        const chaptersData = [
+    {
+        title: " ",
+        content: `Aku masih ingat beberapa waktu yang lalu aku sempat mengantarkan adik iparku, Novi, mengikuti tes di sebuah perusahaan di Surabaya. Dengan setia aku menunggu di ruang lobi perusahaan tersebut saat Novi memasuki ruangan tes.`
+    },
+    {
+        title: " ",
+        content: `Satu setengah jam berlalu, jam menunjukkan pukul 11 siang, dan Novi akhirnya keluar dari ruangan tes menuju lobi. Aku langsung menanyakan apakah ia bisa menjawab semua pertanyaan, dan Novi menjawab "Bisa Mas."`
+    },
+    {
+        title: " ",
+        content: `"Kalau begitu mari kita pulang," pintaku kemudian. Namun, aku segera menambahkan, "E... sebelum pulang kita makan dulu, kamu kan lapar Novi," dan Novi pun mengangguk setuju.`
+    },
+    {
+        title: " ",
+        content: `Setelah beberapa saat, Novi merasa badannya agak lemas dan ia berkata, "Mas, mungkin aku masuk angin *nich*, habis aku kecapekan belajar sih tadi malam." Kebingungan melandaku, lantas aku bertanya apa yang biasa ia lakukan atau obat apa yang diminum.`
+    },
+    {
+        title: " ",
+        content: `Novi kemudian menjawab, "Biasanya dikerokin Mas," sehingga aku berpikir, "Wah.. gimana *yach*," kataku. "Oke, kalau begitu sekarang kita cari losmen *yach* untuk ngerokin kamu," lanjutku, dan Novi hanya mengangguk setuju.`
+    },
+    {
+        title: " ",
+        content: `Lantas, aku dan Novi segera mencari losmen sambil membeli minyak kayu putih untuk kerokan. Kebetulan ada losmen sederhana, itulah yang kupilih untuk kami beristirahat.`
+    },
+    {
+        title: " ",
+        content: `Setelah memesan kamar, aku dan Novi masuk ke kamar 11 di lantai atas. "Terus gimana cara Mas untuk ngerokin kamu Nov," tanyaku, dan tanpa malu-malu dia lantas tiduran di kasur.`
+    },
+    {
+        title: " ",
+        content: `Sebab si Novi sudah menganggapku seperti kakak kandungnya, aku pun segera menghampirinya. "Sini dong, Mas kerokin," pintanya sambil membuka sebagian bajunya, memperlihatkan bahu dan punggungnya yang pucat karena masuk angin.`
+    },
+    {
+        title: " ",
+        content: `Aku mulai menggosokkan minyak kayu putih dan mengeroki punggungnya hingga garis merah mulai terlihat, tanda anginnya memang banyak. Novi sedikit menggeliat, "Eeh... geli, Mas," desisnya pelan, disusul tarikan napas lega.`
+    },
+    {
+        title: " ",
+        content: `Hanya beberapa kerokan saja, Novi mendesah lega, "Ah, enak sekali, Mas... rasanya langsung enakan." Dia kemudian meminta, "Mas, biar lebih lega, boleh tolong kerokin bagian depan dada juga ya? Rasanya sesak sekali."`
+    },
+    {
+        title: " ",
+        content: `Aku sedikit terkejut, namun Novi menatapku dengan mata lelah yang memohon, lalu ia membalikkan badan, membiarkan aku melanjutkan. Aku melanjutkan menggosokkan minyak kayu putih di area dada atas dan sedikit di bahu, sambil sesekali bertanya apakah sudah terasa lebih baik.`
+    },
+    {
+        title: " ",
+        content: `Aku bisa merasakan kehangatan dari kulitnya, dan ada momen hening yang canggung namun juga penuh perhatian. Sesekali, Novi menarik napas dalam, "Mmm... di situ, Mas," katanya pelan saat kerokan mengenai bagian yang pas, kadang sedikit terperanjat geli.`
+    },
+    {
+        title: " ",
+        content: `Saat aku menyelesaikan kerokan di area dadanya, Novi memejamkan mata, napasnya teratur. Aku bisa melihat dia benar-benar kelelahan dan mungkin sedikit demam, tampak begitu rentan, seperti adik kecil yang membutuhkan perlindungan.`
+    },
+    {
+        title: " ",
+        content: `Aku merasakan dorongan kuat untuk memastikan dia baik-baik saja, lalu aku menepuk pelan pundaknya, "Bagaimana, Novi? Sudah jauh lebih baik?" Novi membuka matanya perlahan, menatapku dalam-dalam dengan sorot mata yang penuh rasa terima kasih dan kehangatan, "Jauh lebih baik, Mas. Terima kasih banyak. Mas baik sekali..."`
+    },
+    {
+        title: " ",
+        content: `Ada hening yang cukup lama di antara kami, bukan karena canggung, melainkan karena ada sesuatu yang tak terucap, sebuah ikatan yang lebih dalam dari sekadar kerabat. Novi kemudian menanyakan tentang pekerjaanku, tentang istriku, tentang harapanku.`
+    },
+    {
+        title: " ",
+        content: `Kami berbicara tentang hal-hal personal yang jarang kami bicarakan sebelumnya, dan aku merasakan kedekatan yang tumbuh, bukan dalam artian fisik, melainkan kedekatan seorang kakak yang melihat adiknya begitu polos dan membutuhkan dukungan. Aku menceritakan sedikit tentang bebanku, dan dia mendengarkan dengan penuh perhatian.`
+    },
+    {
+        title: " ",
+        content: `Pada momen itu, aku merasa ingin sekali memeluknya, memberinya kekuatan, meyakinkan bahwa semuanya akan baik-baik saja, bukan pelukan nafsu, tapi pelukan seorang pelindung. Namun aku menahan diri, menghormati batas, tetapi Novi, seolah membaca pikiranku, justru mengulurkan tangan, meraih tanganku yang tadinya memegang minyak kayu putih.`
+    },
+    {
+        title: " ",
+        content: `Dia menggenggam tanganku erat, "Mas, terima kasih sudah ada untukku hari ini." Itu adalah sentuhan sederhana, namun terasa begitu tulus, dan aku merasakan kehangatan yang mengalir, kehangatan persaudaraan dan kepercayaan yang mendalam.`
+    },
+    {
+        title: " ",
+        content: `Keheningan kembali menyelimuti, tapi kali ini penuh dengan perasaan lega dan harmoni. Novi tersenyum tipis, matanya menunjukkan kelegaan dari rasa sakit dan kelelahan.`
+    },
+    {
+        title: " ",
+        content: `Dia mulai bercerita tentang impiannya, tentang ingin sukses agar bisa membantu orang tua. Aku mendengarkan, dan sesekali memberikan nasihat atau dukungan.`
+    },
+    {
+        title: " ",
+        content: `Kami berdua merasa beban di pundak masing-masing sedikit terangkat, bukan karena tindakan fisik yang intens, melainkan karena berbagi cerita dan perasaan yang tulus. "Aku sudah baikan sekarang, Mas," kata Novi sambil tersenyum, "Ayo kita cari makan, aku sudah lapar."`
+    },
+    {
+        title: " ",
+        content: `Kami bangkit, merapikan pakaian, dan aku merasakan sensasi yang berbeda, bukan penyesalan, melainkan refleksi. Aku telah melihat Novi dalam keadaan paling rentan, dan dia telah melihat sisi diriku yang penuh perhatian dan dukungan.`
+    },
+    {
+        title: " ",
+        content: `Itu adalah pengalaman yang mengikat kami dalam cara yang baru dan lebih dalam. Di perjalanan pulang, kami banyak mengobrol dan tertawa, layaknya kakak beradik yang baru saja mengalami petualangan kecil bersama. Ikatan kami semakin kuat, bukan karena hasrat terlarang, tapi karena perhatian dan dukungan tulus yang ada.`
+    }
+
+        ];
+        let currentChapterIndex = 0;
+        let charIndex = 0;
+        let typingTimeout;
+        let isTyping = false;
+        let currentTextTarget = null;
+        let currentFullText = "";
+
+        const storyContainer = document.getElementById('story-container');
+        const instructionsDiv = document.getElementById('instructions');
+        const startButton = document.getElementById('start-button'); // Ambil elemen tombol
+
+        // Sembunyikan story-container dan instructions saat halaman dimuat
+        storyContainer.style.display = 'none';
+        instructionsDiv.style.display = 'none';
+
+        function setupChapterElements(index) {
+            instructionsDiv.style.display = 'none';
+            while (storyContainer.children.length > 1) {
+                if (storyContainer.firstChild !== instructionsDiv) {
+                    storyContainer.removeChild(storyContainer.firstChild);
+                } else {
+                    storyContainer.removeChild(storyContainer.children[1]);
+                }
+            }
+            const chapterData = chaptersData[index];
+            const chapterDiv = document.createElement('div');
+            chapterDiv.classList.add('chapter');
+            chapterDiv.id = `chapter-${index}`;
+
+            const titleElement = document.createElement('h2');
+            titleElement.id = `title-${index}`;
+            chapterDiv.appendChild(titleElement);
+
+            const contentElement = document.createElement('p');
+            contentElement.id = `content-${index}`;
+            chapterDiv.appendChild(contentElement);
+
+            storyContainer.insertBefore(chapterDiv, instructionsDiv);
+            return { chapterDiv, titleElement, contentElement, chapterData };
+        }
+
+        function autoScroll() {
+            storyContainer.scrollTop = storyContainer.scrollHeight;
+        }
+
+        function typeWriter(element, text, baseSpeed, callback) {
+            charIndex = 0;
+            element.textContent = '';
+            currentTextTarget = element;
+            currentFullText = text;
+            isTyping = true;
+            clearTimeout(typingTimeout);
+
+            function typeNextChar() {
+                if (charIndex < currentFullText.length) {
+                    const char = currentFullText.charAt(charIndex);
+                    currentTextTarget.textContent += char;
+                    charIndex++;
+                    autoScroll();
+
+                    let delay = baseSpeed;
+                    // Lebih fokus pada jeda tanda baca akhir kalimat
+                    if (char === ',' || char === ';') {
+                        delay += 200; // Jeda 200ms ekstra untuk koma/titik koma (sedikit lebih lama)
+                    } else if (char === '.' || char === '!' || char === '?') {
+                        delay += 600; // Jeda 600ms ekstra untuk titik/tanda seru/tanda tanya (cukup signifikan)
+                    } else if (char === '\n') {
+                        delay += 300; // Jeda 300ms ekstra saat baris baru/pindah paragraf
+                    }
+                    typingTimeout = setTimeout(typeNextChar, delay);
+                } else {
+                    clearTimeout(typingTimeout);
+                    isTyping = false;
+                    instructionsDiv.style.display = 'block';
+                    if (callback) callback();
+                }
+            }
+            typeNextChar();
+        }
+
+        function finishTypingInstantly() {
+            if (isTyping && currentTextTarget) {
+                clearTimeout(typingTimeout);
+                currentTextTarget.textContent = currentFullText;
+                isTyping = false;
+                autoScroll();
+                instructionsDiv.style.display = 'block';
+
+                if (currentTextTarget.tagName === 'H2') {
+                    const chapterData = chaptersData[currentChapterIndex];
+                    const contentElement = document.getElementById(`content-${currentChapterIndex}`);
+                    typeWriter(contentElement, chapterData.content, 40, null); // Kembali ke kecepatan dasar cepat
+                }
+            }
+        }
+
+        function loadChapter(index) {
+            if (index >= chaptersData.length) {
+                alert('Cerita Selesai!');
+                storyContainer.innerHTML = '<h2>Tamat</h2><p>Terima kasih telah membaca.</p>';
+                instructionsDiv.style.display = 'none';
+                return;
+            }
+            const { chapterDiv, titleElement, contentElement, chapterData } = setupChapterElements(index);
+            storyContainer.scrollTop = 0;
+            setTimeout(() => {
+                chapterDiv.classList.add('active');
+            }, 50);
+
+            // Kecepatan dasar yang lebih lambat
+            typeWriter(titleElement, chapterData.title, 80, () => { // Judul lebih lambat dari sebelumnya
+                typeWriter(contentElement, chapterData.content, 50, null); // Konten juga lebih lambat
+            });
+        }
+
+        // Event listener untuk tombol "Mulai Cerita"
+        startButton.addEventListener('click', () => {
+            startButton.style.display = 'none'; // Sembunyikan tombol setelah diklik
+            storyContainer.style.display = 'block'; // Tampilkan story-container
+            loadChapter(currentChapterIndex); // Mulai memuat cerita
+        });
+
+        storyContainer.addEventListener('click', () => {
+            if (isTyping) {
+                finishTypingInstantly();
+            } else {
+                currentChapterIndex++;
+                loadChapter(currentChapterIndex);
+            }
+        });
+    </script>
+</body>
+</html>
