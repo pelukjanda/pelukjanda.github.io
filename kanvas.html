@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<link rel="manifest" href="manifest.json"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kisah Tak Terduga</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            color: #00ff00; /* Warna teks hijau neon */
+            margin: 0;
+            font-size: 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden; /* Sembunyikan scrollbar global */
+            cursor: pointer; /* Memberi indikasi bisa di-klik */
+
+            /* --- Background GIF untuk seluruh halaman (body) --- */
+            background-image: url('https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/c2353506-4d20-4fe6-8a3f-47d8c90bda35/d3jmuqf-ccd560bb-a748-4fb8-9f41-190135c6b4c4.gif?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcL2MyMzUzNTA2LTRkMjAtNGZlNi04YTNmLTQ3ZDhjOTBiZGEzNVwvZDNqbXVxZi1jY2Q1NjBiYi1hNzQ4LTRmYjgtOWY0MS0xOTAxMzVjNmI0YzQuZ2lmIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.o89vmzEpAQ9j9MrvAwylHCOLLYCJC2XP3dZ2Xi-QHu0');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-attachment: fixed; /* Tetap di tempat saat konten di-scroll */
+        }
+
+        #story-container {
+            width: 90%;
+            max-width: 800px;
+            padding: 30px;
+            box-sizing: border-box;
+            text-align: left;
+            position: relative;
+            overflow-y: auto; /* Aktifkan scroll vertikal jika konten melebihi tinggi */
+            max-height: 90vh; /* Batasi tinggi container agar bisa di-scroll */
+            border: 1px solid #00ff00; /* Border untuk visualisasi */
+
+            /* --- Overlay transparan dan blur di dalam #story-container --- */
+            background-color: rgba(0, 0, 0, 0.4); /* Hitam transparan di atas background GIF */
+            backdrop-filter: blur(3px); /* Efek blur di atas background GIF */
+        }
+
+        .chapter {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            min-height: 250px;
+        }
+
+        .chapter.active {
+            display: block;
+            opacity: 1;
+        }
+
+        h2 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 10px;
+            font-weight: 900;
+            text-shadow:
+                1px 1px 0 #00aa00,
+                -1px -1px 0 #00aa00,
+                1px -1px 0 #00aa00,
+                -1px 1px 0 #00aa00,
+                2px 2px 2px rgba(0, 0, 0, 0.7);
+        }
+
+        p {
+            font-size: 1.1em;
+            font-weight: 800;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            text-shadow:
+                1px 1px 0 #00aa00,
+                -1px -1px 0 #00aa00,
+                1px -1px 0 #00aa00,
+                -1px 1px 0 #00aa00,
+                0px 0px 3px rgba(0, 0, 0, 0.5);
+        }
+
+        #typing-cursor {
+            font-weight: bold;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            from, to { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        #instructions {
+            position: sticky;
+            bottom: 0px;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.7); /* Background agar instruksi tetap mudah dibaca */
+            padding: 10px 0;
+            text-align: center;
+            font-size: 0.9em;
+            color: #ddd;
+            box-shadow: 0 -5px 10px rgba(0, 255, 0, 0.15);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            #story-container {
+                padding: 20px;
+            }
+            h2 {
+                font-size: 1.5em;
+            }
+            p {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="story-container">
+        <div id="instructions">Klik di mana saja untuk melanjutkan...</div>
+    </div>
+
+    <script>
+        // Data cerita dibagi per bab/layar
+        const chaptersData = [
+            {
+                title: "Kerokan yang Berujung Lain",
+                content: `Aku masih ingat beberapa waktu yang lalu aku sempat mengantarkan adik iparku mengikuti test di sebuah perusahaan di Surabaya. Pada saat adik iparku, sebut saja Novi, memasuki ruangan test di perusahaan tersebut, aku dengan setia menunggu di ruang lobi perusahaan tersebut.
+
+Satu setengah jam sudah aku menunggu selesainya Novi mengerjakan test tersebut hingga jam menunjukkan pukul 11 siang. Novi mulai keluar dari ruangan dan menuju lobi. Aku tanya apakah Novi bisa menjawab semua pertanyaan. "Bisa Mas," dia menjawab.`
+            },
+            {
+                title: "Perjalanan ke Losmen",
+                content: `"Kalau begitu mari kita pulang," pintaku.
+
+"E... sebelum pulang kita makan dulu, kamu kan lapar Novi." Kemudian Novi mengangguk.
+
+Setelah beberapa saat Novi merasa badannya agak lemas. Dia bilang, "Mas, mungkin aku masuk angin *nich*, habis aku kecapekan belajar sih tadi malam." Aku bingung harus berbuat apa. Lantas aku tanya biasanya diapakan atau minum obat apa. Lantas dia bilang, "Biasanya dikerokin Mas." "Wah.. gimana *yach*," kataku.`
+            },
+            {
+                title: "Kamar 11 dan Awal Kerokan",
+                content: `"Oke, kalau begitu sekarang kita cari losmen *yach* untuk ngerokin kamu." Novi hanya mengangguk saja. Lantas aku dan Novi mencari losmen sambil membeli minyak kayu putih untuk kerokan. Kebetulan ada losmen sederhana, itulah yang kupilih.
+
+Setelah pesan kamar, aku dan Novi masuk ke kamar 11 di ruang atas. "Terus gimana cara Mas untuk ngerokin kamu Nov," tanyaku. Tanpa malu-malu dia lantas tiduran di kasur, sebab si Novi sudah menganggapku seperti kakak kandungnya. Aku pun segera menghampirinya.
+
+"Sini dong, Mas kerokin." Dan astaga, si Novi buka bajunya, yang kelihatan BH-nya saja. Jelas kelihatan putih dan payudaranya padat berisi. Lantas si Novi tengkurap dan aku mulai untuk menggosokkan minyak kayu putih ke punggungnya dan mulai mengeroki punggungnya.`
+            },
+            {
+                title: "Kerokan Semakin Dalam",
+                content: `Hanya beberapa kerokan saja, Novi bilang, "Entar Mas... BH-ku aku lepas sekalian *yach*... entar mengganggu Mas ngerokin aku." Dan aku terbelalak. Betapa besar payudaranya dan putingnya masih memerah, sebab dia kan masih perawan. Tanpa malu-malu aku lanjutkan untuk mengeroki punggungnya.
+
+Setelah selesai semua aku bilang, "Sudah Nov.. sudah selesai." Tanpa kusadari Novi membalikkan badannya dengan telentang. "Sekarang bagian dadaku Mas, tolong dikerik sekalian." Aku senang bukan main. Jelas buah dadanya yang ranum padat itu tersentuh tanganku. Aku berkali-kali berkata, "Maaf Dik *yach*... aku nggak sengaja kok." "Nggak apa-apa Mas.. teruskan saja."`
+            },
+            {
+                title: "Batasan yang Terlewati",
+                content: `Hampir selesai kerokan dadanya, aku sudah kehilangan akal sehatku. Aku pegang payudaranya, aku elus-elus. Si Novi hanya diam dan memejamkan matanya. Lantas aku ciumi buah dadanya dan kumainkan pentilnya. Novi mendesis, "Mas.. Mas.. ahh.., ah ah ahh..." (desahan lembut). Terus aku kulum putingnya. Tanganku pun nggak mau ketinggalan bergerilya di vaginanya. Pertama dia mengibaskan tanganku. Dia bilang, "Jangan Mas.. jangan Mas." Tapi aku nggak peduli. Terus saja aku masukkan tanganku ke CD-nya, ternyata vaginanya sudah basah sekali. Lantas tanpa diperintah oleh Novi aku buka rok dan CD-nya. Dia hanya memejamkan matanya dan berkata pelan, "Yach Mas..."`
+            },
+            {
+                title: "Puncak Hasrat",
+                content: `Kini Novi sudah telanjang bulat tak pakai apa-apa lagi. Wah, putih mulus, bulunya masih jarang maklum dia baru umur 20 tahun. Lantas aku mulai menciumi vaginanya yang basah dan menjilati vaginanya sampai aku mainkan kelentitnya. Dia mengerang keenakan, "Mas.. ahh.. uaa.. uaa.. Mas..." (erangan panjang). Dan mendesis-desis kegirangan. Tangan Novi sudah gatal ingin pegang penisku saja. Lantas aku berdiri, kubuka baju dan celanaku, kemudian langsung saja Novi memegang penisku dan mengocok penisku. Aku suruh dia untuk mengulum, dia nggak mau. "Nggak Mas jijik.. tuh, nggak ah.. Novi nggak mau." Lantas kupegang dan kuarahkan penisku ke mulutnya. "Jilatin saja coba," pintaku. Lantas Novi menjilati penisku, lama-kelamaan dia mau untuk mengulum penisku, tapi pas pertama dia kulum penisku, dia mau muntah. "Huk.. huk.. aku mau muntah Mas, habis penisnya besar dan panjang.. nggak muat tuh mulutku," katanya.`
+            },
+            {
+                title: "Merenggut Keperawanan",
+                content: `"Isep lagi saja Nov." Lantas dia mulai mengulum lagi dan aku menggerayangi vaginanya yang basah. Lantas aku rentangkan badan Novi.
+
+Rasanya penisku sudah nggak tahan ingin merenggut keperawanan Novi. "Novi.. Mas masukkan yah.. penis Mas ke vaginamu," kataku. Novi bilang, "Jangan Mas.. aku takut," katanya. Aku turuti saja kemauannya, aku tidurkan dia dan kugesek-gesekkan penisku ke vaginanya. Dia merasakan ada benda tumpul menempel di vaginanya, "Mas.. Mas.. jangan..." Aku nggak peduli, terus kugesekkan penisku ke vaginanya. Lama-kelamaan aku mencoba untuk memasukkan penisku ke vaginanya. *Slep*.. (suara dorongan masuk).
+
+Novi menjerit, "Ahk.. Mas.. jangan!"`
+            },
+            {
+                title: "Klimaks yang Menggairahkan",
+                content: `Aku tetap saja meneruskan makin kusodok dan *slep*.. *bles*.. (suara dorongan masuk lebih dalam). Novi menggeliat-geliat keenakan, "Mas.. Mas.. Geliii.. Mas.. jangan..." Lalu Novi menangis, "Mas.. jangan dong..." Aku sudah nggak mempedulikan lagi, sudah telanjur masuk penisku itu.
+
+Lantas aku mulai menggerakkan penisku maju mundur. "Ah.. Mas.. ah.. Mas..." Rupanya Novi sudah merasakan nikmat dan meringis-ringis kesenangan. "Mas..." Aku terus dengan cepatnya menggenjot penisku maju mundur. "Mas.. Mas..." Dan aku merasakan vagina Novi mengeluarkan cairan. Rupanya dia sudah klimaks, tapi aku belum.`
+            },
+            {
+                title: "Pelepasan dan Penyesalan",
+                content: `Aku mempercepat genjotanku. "Terus Mas.. terus Mas.. lebih cepat lagi..." pinta Novi. Tak lama aku merasakan penisku hampir mengeluarkan mani, aku cabut penisku (takut hamil sih) dan aku suruh untuk Novi mengisapnya. Novi mengulum lagi dan terus mengulum ke atas ke bawah. "Hem.. hem.. nikmat.. Mas..." Aku bilang, "Terus Nov.. aku mau keluar *nich*..." Novi mempercepat kulumnya dan.. *cret*.. *cret*.. (suara muncratan) maniku muncrat ke mulut Novi. Novi segera mencabut penisku dari mulutnya dan maniku menyemprot ke pipi dan rambutnya.
+
+"Ah.. ah.. Novi.. maafkan Mas.. *yach*.. aku khilaf Nov.. maaf.. *yach*!" "Nggak apa-apa Mas.. semuanya sudah telanjur kok Mas..." Lantas Novi bersandar di pangkuanku. Kuciumi lagi Novi dengan penuh kesayangan hingga akhirnya aku dan Novi pulang. Dan setelah itu aku pun masih menanam cinta diam-diam dengan Novi kalau istriku pas tidak ada di rumah.`
+            }
+        ];
+
+        let currentChapterIndex = 0;
+        let charIndex = 0;
+        let typingTimeout;
+        let isTyping = false;
+        let currentTextTarget = null;
+        let currentFullText = "";
+
+        const storyContainer = document.getElementById('story-container');
+        const instructionsDiv = document.getElementById('instructions');
+
+        function setupChapterElements(index) {
+            instructionsDiv.style.display = 'none';
+
+            while (storyContainer.children.length > 1) {
+                if (storyContainer.firstChild !== instructionsDiv) {
+                    storyContainer.removeChild(storyContainer.firstChild);
+                } else {
+                    storyContainer.removeChild(storyContainer.children[1]);
+                }
+            }
+
+            const chapterData = chaptersData[index];
+
+            const chapterDiv = document.createElement('div');
+            chapterDiv.classList.add('chapter');
+            chapterDiv.id = `chapter-${index}`;
+
+            const titleElement = document.createElement('h2');
+            titleElement.id = `title-${index}`;
+            chapterDiv.appendChild(titleElement);
+
+            const contentElement = document.createElement('p');
+            contentElement.id = `content-${index}`;
+            chapterDiv.appendChild(contentElement);
+
+            storyContainer.insertBefore(chapterDiv, instructionsDiv);
+
+            return { chapterDiv, titleElement, contentElement, chapterData };
+        }
+
+        function autoScroll() {
+            storyContainer.scrollTop = storyContainer.scrollHeight;
+        }
+
+        function typeWriter(element, text, baseSpeed, callback) {
+            charIndex = 0;
+            element.textContent = '';
+            currentTextTarget = element;
+            currentFullText = text;
+            isTyping = true;
+            clearTimeout(typingTimeout);
+
+            function typeNextChar() {
+                if (charIndex < currentFullText.length) {
+                    const char = currentFullText.charAt(charIndex);
+                    currentTextTarget.textContent += char;
+                    charIndex++;
+                    autoScroll();
+
+                    let delay = baseSpeed;
+
+                    // Lebih fokus pada jeda tanda baca akhir kalimat
+                    if (char === ',' || char === ';') {
+                        delay += 200; // Jeda 200ms ekstra untuk koma/titik koma (sedikit lebih lama)
+                    } else if (char === '.' || char === '!' || char === '?') {
+                        delay += 600; // Jeda 600ms ekstra untuk titik/tanda seru/tanda tanya (cukup signifikan)
+                    } else if (char === '\n') {
+                        delay += 300; // Jeda 300ms ekstra saat baris baru/pindah paragraf
+                    }
+
+                    typingTimeout = setTimeout(typeNextChar, delay);
+                } else {
+                    clearTimeout(typingTimeout);
+                    isTyping = false;
+                    instructionsDiv.style.display = 'block';
+                    if (callback) callback();
+                }
+            }
+
+            typeNextChar();
+        }
+
+        function finishTypingInstantly() {
+            if (isTyping && currentTextTarget) {
+                clearTimeout(typingTimeout);
+                currentTextTarget.textContent = currentFullText;
+                isTyping = false;
+                autoScroll();
+                instructionsDiv.style.display = 'block';
+                if (currentTextTarget.tagName === 'H2') {
+                    const chapterData = chaptersData[currentChapterIndex];
+                    const contentElement = document.getElementById(`content-${currentChapterIndex}`);
+                    typeWriter(contentElement, chapterData.content, 40, null); // Kembali ke kecepatan dasar cepat
+                }
+            }
+        }
+
+        function loadChapter(index) {
+            if (index >= chaptersData.length) {
+                alert('Cerita Selesai!');
+                storyContainer.innerHTML = '<h2>Tamat</h2><p>Terima kasih telah membaca.</p>';
+                instructionsDiv.style.display = 'none';
+                return;
+            }
+
+            const { chapterDiv, titleElement, contentElement, chapterData } = setupChapterElements(index);
+
+            storyContainer.scrollTop = 0;
+
+            setTimeout(() => {
+                chapterDiv.classList.add('active');
+            }, 50);
+
+            // Kecepatan dasar yang lebih lambat
+            typeWriter(titleElement, chapterData.title, 80, () => { // Judul lebih lambat dari sebelumnya
+                typeWriter(contentElement, chapterData.content, 50, null); // Konten juga lebih lambat
+            });
+        }
+
+        storyContainer.addEventListener('click', () => {
+            if (isTyping) {
+                finishTypingInstantly();
+            } else {
+                currentChapterIndex++;
+                loadChapter(currentChapterIndex);
+            }
+        });
+
+        window.onload = () => {
+            loadChapter(currentChapterIndex);
+        };
+    </script>
+
+
+</body>
+</html>
