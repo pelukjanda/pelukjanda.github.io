@@ -9,12 +9,11 @@ from html.parser import HTMLParser
 API_KEY = os.environ.get('BLOGGER_API_KEY')
 BLOG_ID = os.environ.get('BLOG_ID')
 DATA_DIR = 'data'
-POST_DIR = 'posts' # Folder baru untuk artikel
-LABEL_DIR = 'labels' # Folder baru untuk label
+POST_DIR = 'posts' # Ini adalah folder tempat artikel akan disimpan
+LABEL_DIR = 'labels'
 POSTS_JSON = os.path.join(DATA_DIR, 'posts.json')
 POSTS_PER_PAGE = 10
 
-# Pastikan folder baru dibuat
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(POST_DIR, exist_ok=True)
 os.makedirs(LABEL_DIR, exist_ok=True)
@@ -38,10 +37,7 @@ def extract_thumbnail(html):
 
 def strip_html_and_divs(html):
     # Hapus semua tag HTML, termasuk div, tapi pertahankan isinya
-    # Ganti multiple whitespace dengan single space
-    clean_text = re.sub('<[^<]+?>', '', html)
-    clean_text = re.sub(r'\s+', ' ', clean_text).strip()
-    return re.sub(r'</?div[^>]*>', '', clean_text)
+    return re.sub(r'</?div[^>]*>', '', re.sub('<[^<]+?>', '', html))
 
 def remove_anchor_tags(html_content):
     return re.sub(r'<a[^>]*>(.*?)<\/a>', r'\1', html_content)
@@ -53,10 +49,11 @@ def sanitize_filename(title):
 def render_labels(labels):
     if not labels:
         return ""
+    # Menghapus tag div yang melingkupi labels
     html = ''
     for label in labels:
         filename = sanitize_filename(label)
-        html += f'<span><a href="/{LABEL_DIR}/{filename}-1.html">{label}</a></span> '
+        html += f'<span><a href="/labels/{filename}-1.html">{label}</a></span> '
     return html
 
 def load_template(path):
@@ -65,7 +62,6 @@ def load_template(path):
 
 def render_template(template, **context):
     for key, value in context.items():
-        # Pastikan nilai adalah string sebelum penggantian
         template = template.replace(f'{{{{ {key} }}}}', str(value))
     return template
 
@@ -74,6 +70,7 @@ def paginate(total_items, per_page):
     return total_pages
 
 def generate_pagination_links(base_url, current, total):
+    # Modified: Only show "Previous Posts" and "Load More" links
     html = '<div class="pagination-container">' # Added container for styling
     
     # Previous Posts Link (Newer Page)
@@ -81,6 +78,9 @@ def generate_pagination_links(base_url, current, total):
         prev_page_suffix = "" if current - 1 == 1 and "index" in base_url else f"-{current - 1}"
         prev_page_full_url = f"/{base_url}{prev_page_suffix}.html"
         html += f'<span class="pagination-link older-posts"><a href="{prev_page_full_url}">Previous Posts</a></span>'
+
+    # Current page indicator (optional, you can remove this if you truly only want prev/next)
+    # html += f'<span class="current-page-indicator">Page {current} of {total}</span>'
 
     # Load More Link (Next Page)
     if current < total:
@@ -96,14 +96,17 @@ def generate_pagination_links(base_url, current, total):
 def safe_load(path):
     return load_template(path) if os.path.exists(path) else ""
 
+# CSS_FOR_RELATED_POSTS dan CSS_FOR_PAGE_NAVIGATION dihapus sepenuhnya
 CSS_FOR_RELATED_POSTS = "" 
 CSS_FOR_PAGE_NAVIGATION = ""
 
-CUSTOM_HEAD_CONTENT = safe_load("custom_head.html") # Hanya konten head murni
-CUSTOM_JS = safe_load("custom_js.html") # Hanya konten JS murni
+CUSTOM_HEAD_CONTENT = safe_load("custom_head.html")
+CUSTOM_JS = safe_load("custom_js.html")
 CUSTOM_HEADER = safe_load("custom_header.html")
 CUSTOM_SIDEBAR = safe_load("custom_sidebar.html")
 CUSTOM_FOOTER = safe_load("custom_footer.html")
+
+CUSTOM_HEAD_FULL = CUSTOM_HEAD_CONTENT + CUSTOM_JS # Menghilangkan referensi CSS dari sini
 
 # === Ambil semua postingan dari Blogger ===
 def fetch_posts():
@@ -142,7 +145,7 @@ def generate_post_page(post, all_posts):
 
     related_items_html = []
     for p_related in related_sample:
-        related_post_absolute_link = f"/{POST_DIR}/{sanitize_filename(p_related['title'])}.html"
+        related_post_absolute_link = f"/posts/{sanitize_filename(p_related['title'])}.html"
         
         related_post_content = p_related.get('content', '')
         thumb = extract_thumbnail(related_post_content)
@@ -153,7 +156,7 @@ def generate_post_page(post, all_posts):
         if p_related.get('labels'):
             label_name = p_related['labels'][0]
             sanitized_label_name = sanitize_filename(label_name)
-            first_label_html = f'<span class="category testing"><a href="/{LABEL_DIR}/{sanitized_label_name}-1.html">{label_name}</a></span>'
+            first_label_html = f'<span class="category testing"><a href="/labels/{sanitized_label_name}-1.html">{label_name}</a></span>'
 
         related_items_html.append(f"""
             <div class="post-card">
@@ -177,56 +180,12 @@ def generate_post_page(post, all_posts):
     """ if related_items_html else "<p>No related posts found.</p>"
 
     processed_content = remove_anchor_tags(post.get('content', ''))
-    
-    # --- LOGIKA META DESKRIPSI DARI TENGAH ARTIKEL ---
-    meta_desc_raw = strip_html_and_divs(post.get('content', ''))
-    meta_description_length = 150 # Panjang meta deskripsi yang diinginkan (sekitar 150-160)
-
-    if len(meta_desc_raw) <= meta_description_length:
-        # Jika artikel sangat pendek, gunakan seluruh konten bersih
-        meta_description = meta_desc_raw
-    else:
-        # Temukan titik tengah
-        mid_point = len(meta_desc_raw) // 2
-        
-        # Hitung indeks awal dan akhir untuk snippet
-        start_index = max(0, mid_point - meta_description_length // 2)
-        end_index = min(len(meta_desc_raw), mid_point + meta_description_length // 2)
-        
-        # Ekstrak raw snippet
-        meta_description = meta_desc_raw[start_index:end_index]
-        
-        # Pastikan snippet tidak memotong kata di awal
-        if start_index > 0 and meta_desc_raw[start_index-1] != ' ':
-            first_space = meta_description.find(' ')
-            if first_space != -1:
-                meta_description = meta_description[first_space:].strip()
-                if start_index > 0: # Tambahkan elipsis jika ada pemotongan di awal
-                    meta_description = "..." + meta_description
-            else: # Jika tidak ada spasi di awal snippet, biarkan saja
-                if start_index > 0:
-                    meta_description = "..." + meta_description
-
-        # Pastikan snippet tidak memotong kata di akhir
-        if end_index < len(meta_desc_raw) and meta_desc_raw[end_index] != ' ':
-            last_space = meta_description.rfind(' ')
-            if last_space != -1:
-                meta_description = meta_description[:last_space].strip()
-                if end_index < len(meta_desc_raw): # Tambahkan elipsis jika ada pemotongan di akhir
-                    meta_description = meta_description + "..."
-            else: # Jika tidak ada spasi di akhir snippet, biarkan saja
-                if end_index < len(meta_desc_raw):
-                    meta_description = meta_description + "..."
-    # --- AKHIR LOGIKA META DESKRIPSI ---
-    
     html = render_template(POST_TEMPLATE,
         title=post['title'],
         content=processed_content,
         labels=render_labels(post.get("labels", [])),
         related=related_html,
-        meta_description=meta_description, # Variabel ini akan dilewatkan
-        custom_head=CUSTOM_HEAD_CONTENT,  # Dilewatkan terpisah
-        custom_js=CUSTOM_JS,             # Dilewatkan terpisah
+        custom_head=CUSTOM_HEAD_FULL,
         custom_header=CUSTOM_HEADER,
         custom_sidebar=CUSTOM_SIDEBAR,
         custom_footer=CUSTOM_FOOTER
@@ -245,8 +204,8 @@ def generate_index(posts):
 
         items_html = ""
         for post in items:
-            post_filename = sanitize_filename(post['title']) + '.html' 
-            post_absolute_link = f"/{POST_DIR}/{post_filename}"
+            post_filename = generate_post_page(post, posts)
+            post_absolute_link = f"/posts/{post_filename}"
             
             snippet = strip_html_and_divs(post.get('content', ''))[:100]
             thumb = extract_thumbnail(post.get('content', ''))
@@ -255,7 +214,7 @@ def generate_index(posts):
             if post.get('labels'):
                 label_name = post['labels'][0]
                 sanitized_label_name = sanitize_filename(label_name)
-                first_label_html = f'<span class="category testing"><a href="/{LABEL_DIR}/{sanitized_label_name}-1.html">{label_name}</a></span>'
+                first_label_html = f'<span class="category testing"><a href="/labels/{sanitized_label_name}-1.html">{label_name}</a></span>'
             
             items_html += f"""
 <main class="container">
@@ -277,8 +236,7 @@ def generate_index(posts):
         html = render_template(INDEX_TEMPLATE,
             items=items_html,
             pagination=pagination,
-            custom_head=CUSTOM_HEAD_CONTENT,
-            custom_js=CUSTOM_JS,
+            custom_head=CUSTOM_HEAD_FULL,
             custom_header=CUSTOM_HEADER,
             custom_sidebar=CUSTOM_SIDEBAR,
             custom_footer=CUSTOM_FOOTER
@@ -304,17 +262,17 @@ def generate_label_pages(posts):
 
             items_html = ""
             for post in items:
-                post_filename = sanitize_filename(post['title']) + '.html'
-                post_absolute_link = f"/{POST_DIR}/{post_filename}"
+                post_filename = generate_post_page(post, posts)
+                post_absolute_link = f"/posts/{post_filename}"
                 
-                snippet = strip_html_and_divs(post.get('content', ''))[:100]
+                snippet = strip_html_and_divs(post.get('content', ''))[:100] # Adjusted snippet length
                 thumb = extract_thumbnail(post.get('content', ''))
 
                 first_label_html = ""
                 if post.get('labels'):
                     label_name = post['labels'][0]
                     sanitized_label_name = sanitize_filename(label_name)
-                    first_label_html = f'<span class="category testing"><a href="/{LABEL_DIR}/{sanitized_label_name}-1.html">{label_name}</a></span>'
+                    first_label_html = f'<span class="category testing"><a href="/labels/{sanitized_label_name}-1.html">{label_name}</a></span>'
 
                 items_html += f"""
 <main class="container">
@@ -333,14 +291,13 @@ def generate_label_pages(posts):
 </main>
 """
             pagination = generate_pagination_links(
-                f"{LABEL_DIR}/{sanitize_filename(label)}", page, total_pages
+                f"labels/{sanitize_filename(label)}", page, total_pages
             )
             html = render_template(LABEL_TEMPLATE,
                 label=label,
                 items=items_html,
                 pagination=pagination,
-                custom_head=CUSTOM_HEAD_CONTENT,
-                custom_js=CUSTOM_JS,
+                custom_head=CUSTOM_HEAD_FULL,
                 custom_header=CUSTOM_HEADER,
                 custom_sidebar=CUSTOM_SIDEBAR,
                 custom_footer=CUSTOM_FOOTER
