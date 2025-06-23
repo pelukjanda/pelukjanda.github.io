@@ -8,6 +8,10 @@ body {
     flex-direction: column;
     min-height: 100vh;
 }
+a {
+    color: #ff4d4d; 
+    text-decoration: none;
+}
 
 /* Navbar Styles */
 .navbar {
@@ -125,8 +129,7 @@ body {
     text-transform: uppercase;
 }
 
-.category.testing a {
-    background-color: #5bc0de; /* Blue */
+.category.testing {
     color: white;
 }
 
