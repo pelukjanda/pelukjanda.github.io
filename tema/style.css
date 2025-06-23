@@ -94,7 +94,7 @@ body {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-.post-image, .post-card img {
+.post-image {
     width: 100px; /* Lebar thumbnail */
     height: 70px; /* Tinggi thumbnail */
     object-fit: cover;
@@ -125,8 +125,8 @@ body {
     text-transform: uppercase;
 }
 
-.category.testing {
-    background-color: #5cb85c; /* Green */
+.category.testing a {
+    background-color: #5bc0de; /* Blue */
     color: white;
 }
 
