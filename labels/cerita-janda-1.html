@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Cerita Janda | Cerita Sex Dewasa</title>
+  <meta content='width=device-width, initial-scale=1' name='viewport'/>
+
+<link rel="stylesheet" href="/tema/style.css"/>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+</head>
+<body>
+<header class="navbar">
+        <div class="navbar-left">
+            <button class="menu-icon" id="menuToggle"><i class="fas fa-bars"></i></button>
+            <span class="logo-text">Peluk Janda</span>
+        </div>
+        <div class="navbar-right">
+            <button class="search-icon"><i class="fas fa-search"></i></button>
+            
+        </div>
+    </header>
+
+    <nav class="sidebar" id="sidebar">
+        <ul>
+            <li><a href="https://pelukjanda.github.io"><i class="fas fa-home"></i> Beranda</a></li>
+            <li><a href="#"><i class="fas fa-newspaper"></i> Blog</a></li>
+            <li><a href="#"><i class="fas fa-tag"></i> Kategori</a></li>
+            <li><a href="#"><i class="fas fa-info-circle"></i> Tentang Kami</a></li>
+            <li><a href="#"><i class="fas fa-envelope"></i> Kontak</a></li>
+            </ul>
+    </nav>
+
+  <h1 class="post-title">Cerita Janda</h1>
+    
+<main class="container">
+    <div class="post-list">
+        <div class="post-card">
+            <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEikMx1qTGy_2rrAt40Zzcdg413WIK_tTJZ5klMDi_9UFXtRDBdWbiyTaiNFmgodGWZtlshNqSO5uGYFHyrV3qiQVuNq9rVvA638KwdPogjRVH2F7oJ47sjICnUeiUn9zq5-dbQevyG-ZRjO/s1600/6465_459935430762943_1211757191_n.jpg" alt="thumbnail">
+            <div class="post-content">
+                <div class="post-meta">
+                    <span class="category testing"><a href="/labels/cerita-janda-1.html">Cerita Janda</a></span>
+                </div>
+                <h2 class="post-title"><a href="/posts/pembantu-montokk-amp-semok.html">Pembantu Montokk &amp; Semok</a></h2>
+                <p class="post-author">By Om Sugeng · <a href="/posts/pembantu-montokk-amp-semok.html">Baca Cerita</a></p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<main class="container">
+    <div class="post-list">
+        <div class="post-card">
+            <img src="https://placehold.co/100x56.25/E0E0E0/333333?text=No+Image" alt="thumbnail">
+            <div class="post-content">
+                <div class="post-meta">
+                    <span class="category testing"><a href="/labels/cerita-janda-1.html">Cerita Janda</a></span>
+                </div>
+                <h2 class="post-title"><a href="/posts/sri-janda-kembang.html">Sri, Janda Kembang</a></h2>
+                <p class="post-author">By Om Sugeng · <a href="/posts/sri-janda-kembang.html">Baca Cerita</a></p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<main class="container">
+    <div class="post-list">
+        <div class="post-card">
+            <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjLF9LaYE9cSTdbF5JWIAETtN-JQOPHj-r6MgmJXcL5IFb4IOIl-7kNEbjywMT-JQ5mmct1fxebljV52b9LESKxzD_UcIq2HKzqOyGei0OhiIWFy6wnkHtDIg_K69J8Q6hEO97GwscPswqL/s320/kwpndrepm20c.jpg" alt="thumbnail">
+            <div class="post-content">
+                <div class="post-meta">
+                    <span class="category testing"><a href="/labels/cerita-janda-1.html">Cerita Janda</a></span>
+                </div>
+                <h2 class="post-title"><a href="/posts/cerita-sex-berawal-dari-sms.html">Cerita Sex: Berawal Dari SMS</a></h2>
+                <p class="post-author">By Om Sugeng · <a href="/posts/cerita-sex-berawal-dari-sms.html">Baca Cerita</a></p>
+            </div>
+        </div>
+    </div>
+</main>
+
+  <div class="pagination-container"><span style="clear:both;"></span></div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    let overlay = document.querySelector('.overlay'); // Coba ambil overlay jika sudah ada
+    const body = document.body;
+
+    // Fungsi untuk membuka sidebar
+    function openSidebar() {
+        sidebar.classList.add('active');
+        body.classList.add('sidebar-open'); // Tambahkan kelas ke body
+        
+        // Buat overlay jika belum ada
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.classList.add('overlay');
+            document.body.appendChild(overlay);
+        }
+        overlay.classList.add('active'); // Tampilkan overlay
+    }
+
+    // Fungsi untuk menutup sidebar
+    function closeSidebar() {
+        sidebar.classList.remove('active');
+        body.classList.remove('sidebar-open'); // Hapus kelas dari body
+        if (overlay) {
+            overlay.classList.remove('active'); // Sembunyikan overlay
+        }
+    }
+
+    // Event listener untuk tombol hamburger
+    menuToggle.addEventListener('click', function() {
+        if (sidebar.classList.contains('active')) {
+            closeSidebar();
+        } else {
+            openSidebar();
+        }
+    });
+
+    // Event listener untuk menutup sidebar saat overlay diklik
+    // Perhatikan: Overlay baru akan dibuat jika belum ada.
+    // Pastikan event listener ini ditambahkan setelah overlay dipastikan ada.
+    document.addEventListener('click', function(event) {
+        if (overlay && event.target === overlay) {
+            closeSidebar();
+        }
+    });
+
+    // Opsional: Tutup sidebar jika ukuran layar berubah dan sidebar terbuka
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768 && sidebar.classList.contains('active')) {
+            closeSidebar();
+        }
+    });
+});
+</script>
+
+</body>
+</html>
