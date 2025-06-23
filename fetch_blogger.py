@@ -9,8 +9,8 @@ from html.parser import HTMLParser
 API_KEY = os.environ.get('BLOGGER_API_KEY')
 BLOG_ID = os.environ.get('BLOG_ID')
 DATA_DIR = 'data'
-POST_DIR = 'cerita-dewasa' # Folder baru untuk artikel
-LABEL_DIR = 'kategori-cerita' # Folder baru untuk label
+POST_DIR = 'posts' # Folder baru untuk artikel
+LABEL_DIR = 'labels' # Folder baru untuk label
 POSTS_JSON = os.path.join(DATA_DIR, 'posts.json')
 POSTS_PER_PAGE = 10
 
