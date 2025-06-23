@@ -33,7 +33,7 @@ class ImageExtractor(HTMLParser):
 def extract_thumbnail(html):
     parser = ImageExtractor()
     parser.feed(html)
-    return parser.thumbnail or 'https://placehold.co/100x56.25/E0E0E0/333333?text=No+Image'
+    return parser.thumbnail or 'https://pelukjanda.github.io/tema/no-thumbnail.jpg'
 
 def strip_html_and_divs(html):
     # Hapus semua tag HTML, termasuk div, tapi pertahankan isinya
