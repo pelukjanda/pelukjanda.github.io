@@ -160,7 +160,7 @@ def generate_post_page(post, all_posts):
 
         related_items_html.append(f"""
             <div class="post-card">
-                <img src="{thumb}" alt="{p_related["title"]}">
+                <img class="post-image" src="{thumb}" alt="{p_related["title"]}">
                 <div class="post-content">
                     <div class="post-meta">
                         {first_label_html}
@@ -220,7 +220,7 @@ def generate_index(posts):
 <main class="container">
     <div class="post-list">
         <div class="post-card">
-            <img src="{thumb}" alt="thumbnail">
+            <img class="post-image" src="{thumb}" alt="thumbnail">
             <div class="post-content">
                 <div class="post-meta">
                     {first_label_html}
@@ -278,7 +278,7 @@ def generate_label_pages(posts):
 <main class="container">
     <div class="post-list">
         <div class="post-card">
-            <img src="{thumb}" alt="thumbnail">
+            <img class="post-image" src="{thumb}" alt="thumbnail">
             <div class="post-content">
                 <div class="post-meta">
                     {first_label_html}
