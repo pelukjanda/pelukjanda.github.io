@@ -4,7 +4,7 @@ import re
 import json
 import random
 from html.parser import HTMLParser
-from datetime import datetime
+from datetime import datetime, timezone
 
 # === Konfigurasi ===
 API_KEY = os.environ.get('BLOGGER_API_KEY')
@@ -14,7 +14,7 @@ POST_DIR = 'posts' # Ini adalah folder tempat artikel akan disimpan
 LABEL_DIR = 'labels'
 POSTS_JSON = os.path.join(DATA_DIR, 'posts.json')
 POSTS_PER_PAGE = 10
-BASE_URL = 'https://pelukjanda.github.io' # Ganti dengan URL dasar GitHub Pages Anda
+BASE_URL = 'https://pelukjanda.github.io' # GANTI DENGAN URL GITHUB PAGES ANDA! Contoh: 'https://username.github.io/repository-name'
 
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(POST_DIR, exist_ok=True)
@@ -35,7 +35,7 @@ class ImageExtractor(HTMLParser):
 def extract_thumbnail(html):
     parser = ImageExtractor()
     parser.feed(html)
-    return parser.thumbnail or 'https://pelukjanda.github.io/tema/no-thumbnail.jpg'
+    return parser.thumbnail or 'https://pelukjanda.github.io/tema/no-thumbnail.jpg' # Ganti jika Anda punya thumbnail default sendiri
 
 def strip_html_and_divs(html):
     # Hapus semua tag HTML, termasuk div, tapi pertahankan isinya
@@ -51,7 +51,6 @@ def sanitize_filename(title):
 def render_labels(labels):
     if not labels:
         return ""
-    # Menghapus tag div yang melingkupi labels
     html = ''
     for label in labels:
         filename = sanitize_filename(label)
@@ -72,17 +71,13 @@ def paginate(total_items, per_page):
     return total_pages
 
 def generate_pagination_links(base_url, current, total):
-    # Modified: Only show "Previous Posts" and "Load More" links
-    html = '<div class="pagination-container">' # Added container for styling
+    html = '<div class="pagination-container">'
     
     # Previous Posts Link (Newer Page)
     if current > 1:
         prev_page_suffix = "" if current - 1 == 1 and "index" in base_url else f"-{current - 1}"
         prev_page_full_url = f"/{base_url}{prev_page_suffix}.html"
         html += f'<span class="pagination-link older-posts"><a href="{prev_page_full_url}">Previous Posts</a></span>'
-
-    # Current page indicator (optional, you can remove this if you truly only want prev/next)
-    # html += f'<span class="current-page-indicator">Page {current} of {total}</span>'
 
     # Load More Link (Next Page)
     if current < total:
@@ -91,7 +86,7 @@ def generate_pagination_links(base_url, current, total):
         html += f'<span class="pagination-link load-more"><a href="{next_page_full_url}">Load More</a></span>'
     
     html += '<span style="clear:both;"></span>'
-    html += '</div>' # Close pagination-container
+    html += '</div>'
     return html
 
 # === Komponen Custom (Head, Header, Sidebar, Footer) ===
@@ -108,7 +103,7 @@ CUSTOM_HEADER = safe_load("custom_header.html")
 CUSTOM_SIDEBAR = safe_load("custom_sidebar.html")
 CUSTOM_FOOTER = safe_load("custom_footer.html")
 
-CUSTOM_HEAD_FULL = CUSTOM_HEAD_CONTENT + CUSTOM_JS # Menghilangkan referensi CSS dari sini
+CUSTOM_HEAD_FULL = CUSTOM_HEAD_CONTENT + CUSTOM_JS
 
 # === Ambil semua postingan dari Blogger ===
 def fetch_posts():
@@ -267,7 +262,7 @@ def generate_label_pages(posts):
                 post_filename = generate_post_page(post, posts)
                 post_absolute_link = f"/posts/{post_filename}"
                 
-                snippet = strip_html_and_divs(post.get('content', ''))[:100] # Adjusted snippet length
+                snippet = strip_html_and_divs(post.get('content', ''))[:100]
                 thumb = extract_thumbnail(post.get('content', ''))
 
                 first_label_html = ""
@@ -308,26 +303,47 @@ def generate_label_pages(posts):
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write(html)
 
----
+def parse_blogger_timestamp(timestamp_str):
+    """
+    Parses Blogger API timestamp strings into datetime objects.
+    Handles different formats Blogger might return.
+    """
+    try:
+        # Try parsing with timezone information
+        return datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+    except ValueError:
+        # Fallback for older/different formats, e.g., 'YYYY-MM-DDTHH:MM:SS.fffZ'
+        # This will assume UTC if 'Z' is present but doesn't have offset
+        if timestamp_str.endswith('Z'):
+            timestamp_str = timestamp_str[:-1] # Remove 'Z'
+            try:
+                return datetime.strptime(timestamp_str, '%Y-%m-%dT%H:%M:%S.%f').replace(tzinfo=timezone.utc)
+            except ValueError:
+                return datetime.strptime(timestamp_str, '%Y-%m-%dT%H:%M:%S').replace(tzinfo=timezone.utc)
+        raise ValueError(f"Unknown datetime format: {timestamp_str}")
 
-### **Fungsi Baru untuk Feed XML**
 
-```python
+# === Fungsi Baru untuk Feed XML ===
 def generate_feed_xml(posts):
     feed_entries = []
     # Batasi jumlah entri di feed, misalnya 10 atau 20 postingan terbaru
-    for post in sorted(posts, key=lambda p: p['published'], reverse=True)[:20]:
+    # Sort posts by 'updated' or 'published' date in descending order
+    sorted_posts = sorted(posts, key=lambda p: p.get('updated', p.get('published', '')), reverse=True)
+
+    for post in sorted_posts[:20]: # Ambil 20 postingan terbaru
         title = post['title']
         link = f"{BASE_URL}/posts/{sanitize_filename(title)}.html"
-        # Gunakan 'updated' jika ada, jika tidak, gunakan 'published'
-        updated_date = post.get('updated', post['published'])
-        # Format tanggal ke ISO 8601 (YYYY-MM-DDTHH:MM:SSZ)
+        
+        updated_date_str = post.get('updated', post.get('published'))
+        if not updated_date_str: # Skip if no valid date
+            continue
+        
         try:
-            dt_object = datetime.fromisoformat(updated_date.replace('Z', '+00:00'))
-        except ValueError:
-            # Fallback for slightly different date formats
-            dt_object = datetime.strptime(updated_date, '%Y-%m-%dT%H:%M:%S.%fZ') # Example format
-        formatted_date = dt_object.isoformat(timespec='seconds') + 'Z' # Add Z for UTC
+            dt_object = parse_blogger_timestamp(updated_date_str)
+            formatted_date = dt_object.isoformat(timespec='seconds').replace('+00:00', 'Z') # Ensure 'Z' for Atom feed
+        except ValueError as e:
+            print(f"Warning: Could not parse date for post '{title}': {e}. Skipping feed entry.")
+            continue
 
         # Ambil ringkasan konten (misalnya 200 karakter pertama setelah strip HTML)
         summary = strip_html_and_divs(post.get('content', ''))
@@ -344,27 +360,125 @@ def generate_feed_xml(posts):
         )
 
     # Get the latest updated date from all posts for the feed's updated tag
-    latest_updated = datetime.now(datetime.timezone.utc).isoformat(timespec='seconds') + 'Z'
+    latest_updated = datetime.now(timezone.utc).isoformat(timespec='seconds').replace('+00:00', 'Z')
     if posts:
-        latest_post_updated = sorted(posts, key=lambda p: p.get('updated', p['published']), reverse=True)[0].get('updated', posts[0]['published'])
-        try:
-            latest_dt = datetime.fromisoformat(latest_post_updated.replace('Z', '+00:00'))
-        except ValueError:
-            latest_dt = datetime.strptime(latest_post_updated, '%Y-%m-%dT%H:%M:%S.%fZ')
-        latest_updated = latest_dt.isoformat(timespec='seconds') + 'Z'
-
+        # Find the actual latest updated post among all fetched posts
+        latest_post_data = sorted(posts, key=lambda p: p.get('updated', p.get('published', '')), reverse=True)
+        if latest_post_data:
+            latest_updated_str = latest_post_data[0].get('updated', latest_post_data[0].get('published'))
+            try:
+                latest_dt_obj = parse_blogger_timestamp(latest_updated_str)
+                latest_updated = latest_dt_obj.isoformat(timespec='seconds').replace('+00:00', 'Z')
+            except ValueError as e:
+                print(f"Warning: Could not parse latest blog update date: {e}. Using current time.")
 
     feed_content = f"""<?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="[http://www.w3.org/2005/Atom](http://www.w3.org/2005/Atom)">
-  <title>Nama Blog Anda</title> <link href="{BASE_URL}/feed.xml" rel="self"/>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Peluk Janda</title> <link href="{BASE_URL}/feed.xml" rel="self"/>
   <link href="{BASE_URL}/"/>
   <updated>{latest_updated}</updated>
   <id>{BASE_URL}/</id>
   <author>
-    <name>Nama Penulis Anda</name> </author>
+    <name>Om Sugeng</name> </author>
 {chr(10).join(feed_entries)}
 </feed>"""
 
     with open('feed.xml', 'w', encoding='utf-8') as f:
         f.write(feed_content)
     print("✅ feed.xml berhasil dibuat.")
+
+# === Fungsi Baru untuk Sitemap XML ===
+def generate_sitemap_xml(posts):
+    urls = []
+    # Add homepage
+    urls.append(f"""
+  <url>
+    <loc>{BASE_URL}/</loc>
+    <lastmod>{datetime.now(timezone.utc).isoformat(timespec='seconds')}+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>""")
+
+    # Add posts
+    for post in posts:
+        title = post['title']
+        link = f"{BASE_URL}/posts/{sanitize_filename(title)}.html"
+        
+        lastmod_date_str = post.get('updated', post.get('published'))
+        if not lastmod_date_str:
+            continue
+
+        try:
+            dt_object = parse_blogger_timestamp(lastmod_date_str)
+            formatted_lastmod = dt_object.isoformat(timespec='seconds').replace('Z', '+00:00') # Ensure +00:00 for sitemap
+        except ValueError as e:
+            print(f"Warning: Could not parse date for post '{title}': {e}. Skipping sitemap entry for this post.")
+            continue
+
+        urls.append(f"""
+  <url>
+    <loc>{link}</loc>
+    <lastmod>{formatted_lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>""")
+
+    # Add index pagination pages
+    total_index_pages = paginate(len(posts), POSTS_PER_PAGE)
+    for page in range(2, total_index_pages + 1): # Start from page 2 as page 1 is homepage
+        index_page_link = f"{BASE_URL}/index-{page}.html"
+        urls.append(f"""
+  <url>
+    <loc>{index_page_link}</loc>
+    <lastmod>{datetime.now(timezone.utc).isoformat(timespec='seconds')}+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>""")
+
+
+    # Add label pages
+    label_map = {}
+    for post in posts:
+        if 'labels' in post:
+            for label in post['labels']:
+                label_map.setdefault(label, []).append(post)
+
+    for label in label_map.keys():
+        total_label_pages = paginate(len(label_map[label]), POSTS_PER_PAGE)
+        for page in range(1, total_label_pages + 1):
+            label_page_link = f"{BASE_URL}/labels/{sanitize_filename(label)}-{page}.html"
+            urls.append(f"""
+  <url>
+    <loc>{label_page_link}</loc>
+    <lastmod>{datetime.now(timezone.utc).isoformat(timespec='seconds')}+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>""")
+
+    sitemap_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{chr(10).join(urls)}
+</urlset>"""
+
+    with open('sitemap.xml', 'w', encoding='utf-8') as f:
+        f.write(sitemap_content)
+    print("✅ sitemap.xml berhasil dibuat.")
+
+# === Eksekusi ===
+if __name__ == '__main__':
+    print("📥 Mengambil artikel...")
+    posts = fetch_posts()
+    print(f"✅ Artikel diambil: {len(posts)}")
+    
+    print("🔄 Membuat halaman HTML...")
+    generate_index(posts)
+    generate_label_pages(posts)
+    print("✅ Halaman index, label, dan artikel selesai dibuat.")
+
+    print("📝 Membuat feed.xml...")
+    generate_feed_xml(posts)
+
+    print("🗺️ Membuat sitemap.xml...")
+    generate_sitemap_xml(posts)
+    
+    print("🎉 Proses selesai!")
