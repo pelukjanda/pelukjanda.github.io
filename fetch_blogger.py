@@ -4,6 +4,7 @@ import re
 import json
 import random
 from html.parser import HTMLParser
+from datetime import datetime
 
 # === Konfigurasi ===
 API_KEY = os.environ.get('BLOGGER_API_KEY')
@@ -13,6 +14,7 @@ POST_DIR = 'posts' # Ini adalah folder tempat artikel akan disimpan
 LABEL_DIR = 'labels'
 POSTS_JSON = os.path.join(DATA_DIR, 'posts.json')
 POSTS_PER_PAGE = 10
+BASE_URL = 'https://pelukjanda.github.io' # Ganti dengan URL dasar GitHub Pages Anda
 
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(POST_DIR, exist_ok=True)
@@ -306,11 +308,63 @@ def generate_label_pages(posts):
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write(html)
 
-# === Eksekusi ===
-if __name__ == '__main__':
-    print("📥 Mengambil artikel...")
-    posts = fetch_posts()
-    print(f"✅ Artikel diambil: {len(posts)}")
-    generate_index(posts)
-    generate_label_pages(posts)
-    print("✅ Halaman index, label, dan artikel selesai dibuat.")
+---
+
+### **Fungsi Baru untuk Feed XML**
+
+```python
+def generate_feed_xml(posts):
+    feed_entries = []
+    # Batasi jumlah entri di feed, misalnya 10 atau 20 postingan terbaru
+    for post in sorted(posts, key=lambda p: p['published'], reverse=True)[:20]:
+        title = post['title']
+        link = f"{BASE_URL}/posts/{sanitize_filename(title)}.html"
+        # Gunakan 'updated' jika ada, jika tidak, gunakan 'published'
+        updated_date = post.get('updated', post['published'])
+        # Format tanggal ke ISO 8601 (YYYY-MM-DDTHH:MM:SSZ)
+        try:
+            dt_object = datetime.fromisoformat(updated_date.replace('Z', '+00:00'))
+        except ValueError:
+            # Fallback for slightly different date formats
+            dt_object = datetime.strptime(updated_date, '%Y-%m-%dT%H:%M:%S.%fZ') # Example format
+        formatted_date = dt_object.isoformat(timespec='seconds') + 'Z' # Add Z for UTC
+
+        # Ambil ringkasan konten (misalnya 200 karakter pertama setelah strip HTML)
+        summary = strip_html_and_divs(post.get('content', ''))
+        summary = summary[:200] + "..." if len(summary) > 200 else summary
+
+        feed_entries.append(f"""
+    <entry>
+        <title>{title}</title>
+        <link href="{link}"/>
+        <updated>{formatted_date}</updated>
+        <id>{link}</id>
+        <content type="html"><![CDATA[{summary}]]></content>
+    </entry>"""
+        )
+
+    # Get the latest updated date from all posts for the feed's updated tag
+    latest_updated = datetime.now(datetime.timezone.utc).isoformat(timespec='seconds') + 'Z'
+    if posts:
+        latest_post_updated = sorted(posts, key=lambda p: p.get('updated', p['published']), reverse=True)[0].get('updated', posts[0]['published'])
+        try:
+            latest_dt = datetime.fromisoformat(latest_post_updated.replace('Z', '+00:00'))
+        except ValueError:
+            latest_dt = datetime.strptime(latest_post_updated, '%Y-%m-%dT%H:%M:%S.%fZ')
+        latest_updated = latest_dt.isoformat(timespec='seconds') + 'Z'
+
+
+    feed_content = f"""<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="[http://www.w3.org/2005/Atom](http://www.w3.org/2005/Atom)">
+  <title>Nama Blog Anda</title> <link href="{BASE_URL}/feed.xml" rel="self"/>
+  <link href="{BASE_URL}/"/>
+  <updated>{latest_updated}</updated>
+  <id>{BASE_URL}/</id>
+  <author>
+    <name>Nama Penulis Anda</name> </author>
+{chr(10).join(feed_entries)}
+</feed>"""
+
+    with open('feed.xml', 'w', encoding='utf-8') as f:
+        f.write(feed_content)
+    print("✅ feed.xml berhasil dibuat.")
