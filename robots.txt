@@ -1,1 +1,1 @@
-Sitemap: https://pelukjanda.github.io/sitemap.xml
+Sitemap: https://pelukjanda.github.io/sitemap.js
